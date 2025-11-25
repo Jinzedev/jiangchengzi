@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>流氓叙事</title>
+  
+  <style>
+  :root {
+    font-family: "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    color: #edf4ff;
+    background-color: #030a1a;
+  }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: url('./2.jpg') center/cover no-repeat;
+  background-attachment: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+
+.popup {
+  position: fixed;
+  min-width: 80px;
+  max-width: 70vw;
+  min-height: 40px;
+
+  /* 优化后的背景：黑色遮罩 + 指定图片 */
+  background: linear-gradient(rgba(0, 10, 30, 0.6), rgba(0, 10, 30, 0.6)),
+              url('./1.jpg') center/cover no-repeat;
+
+  /* 优化后的文字：亮色 + 呼吸感阴影 */
+  color: #e6eeff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  border-radius: 18px;
+  text-align: center;
+  padding: 0.85em 1.6em;
+  
+  /* 优化后的盒子阴影：更深邃，符合暗色调 */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 
+              inset 0 0 0 1px rgba(255, 255, 255, 0.1); /* 内发光边框 */
+
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.75) rotate(var(--angle, 0deg));
+  transition: opacity 0.5s ease, transform 0.52s ease;
+  word-break: break-word;
+  
+  /* 毛玻璃保留 */
+  backdrop-filter: blur(5px);
+}
+
+
+  </style>
+</head>
+<body>
+
+<!-- 自动循环播放背景音乐（无按钮） -->
+<audio id="bgMusic" loop autoplay>
+  <source src="./1.mp3" type="audio/mpeg">
+  您的浏览器不支持音频播放。
+</audio>
+
+<script>
+const firstMessage = "聿，你看见我了吗？";
+const messages = [
+  "聿，我们现在，算真夫妻了吗？",
+  "遗憾的不是你不爱我，而是我再也不能爱你。",
+  "我这个人，比较擅长在荒芜中种植希望。",
+  "我永远不想错过你。",
+  "记忆太浅，可你还是叫了我的名字，叫我羌青瓷。",
+  "我真的喜欢你很长时间了，比一根火柴要长，比十年也要长。",
+  "恨比爱长久。",
+  "我的承诺、我的爱，不需要成为你的负担。",
+  "鲨鱼的安魂曲，永远为你回荡。",
+  "聿，我的密码都是一样的。",
+  "所以，亲爱的，纯恨情侣，怎么不算情侣？",
+  "第三根，消除记忆。",
+  "你真的要剖开我的心吗。",
+  "我早就看见你了。",
+  "第三根火柴燃尽之际，天光地，黄昏的火烧云下如同野火。",
+  "这般凉薄的人，唇竟也是热的。",
+  "所以…对不起…这一次，我还是不忘了。",
+  "天杀的，你比我更像我。",
+  "可是聿，我们之间十年的过往，竟比一根火柴的时间还要短暂。",
+  "炙红的弧斑花铺天盖地，黄昏的火烧云下如同野火。",
+  "孤挺花的花语是：喋喋不休。",
+  "火光之下，字字真心。",
+  "钱都给你，命是赠品。",
+  "第二根，进入催眠。",
+  "我们同登彼岸。",
+  "我的十分真心，被你当作的三分假意，都将随着这根火柴燃尽，而云散烟消。",
+  "这些记忆太过渺小，可你依旧是唯一。",
+  "如果奇迹照拂你，让我做第一个为你鼓掌的人。",
+  "聿，你看见我了吗？"
+];
+
+const DEFAULT_POPUP_WIDTH = 160;
+const DEFAULT_POPUP_HEIGHT = 56;
+const SAFE_MARGIN = 3;
+const MAX_POPUPS = Math.ceil(window.innerWidth * window.innerHeight / (DEFAULT_POPUP_WIDTH * DEFAULT_POPUP_HEIGHT) * 3);
+const BALANCE_SAMPLES = 3;
+const SIDE_JITTER = 0.2;
+const INITIAL_DELAY = 900;
+const MIN_DELAY = 360;
+
+let horizontalBalance = 0;
+let verticalBalance = 0;
+let count = 0;
+
+function balancedRandom(samples = BALANCE_SAMPLES) {
+  let total = 0;
+  for (let i = 0; i < samples; i++) {
+    total += Math.random();
+  }
+  return total / samples;
+}
+
+function biasedValue(balance) {
+  const drift = Math.max(Math.min(-balance * 0.45, 0.3), -0.3);
+  let value = balancedRandom() + drift;
+  if (Math.random() < SIDE_JITTER) {
+    value = balancedRandom();
+  }
+  return Math.min(Math.max(value, 0), 1);
+}
+
+function keepBombing() {
+  if (count >= MAX_POPUPS) return;
+  const msg = count === 0 ? firstMessage : messages[Math.floor(Math.random()*messages.length)];
+  count++;
+  const angle = (Math.random()*30-15).toFixed(1);
+  const popup = document.createElement('div');
+  popup.className = 'popup';
+  popup.textContent = msg;
+  popup.style.visibility = 'hidden';
+  popup.style.setProperty('--angle', angle+"deg");
+  document.body.appendChild(popup);
+
+  const rect = popup.getBoundingClientRect();
+  const width = rect.width || DEFAULT_POPUP_WIDTH;
+  const height = rect.height || DEFAULT_POPUP_HEIGHT;
+  const availableWidth = Math.max(window.innerWidth - width - SAFE_MARGIN * 2, 0);
+  const availableHeight = Math.max(window.innerHeight - height - SAFE_MARGIN * 2, 0);
+
+  let left = SAFE_MARGIN;
+  if (availableWidth > 0) {
+    const ratio = biasedValue(horizontalBalance);
+    left += ratio * availableWidth;
+    horizontalBalance = horizontalBalance * 0.9 + (ratio - 0.5);
+  }
+
+  let top = SAFE_MARGIN;
+  if (availableHeight > 0) {
+    const ratio = biasedValue(verticalBalance);
+    top += ratio * availableHeight;
+    verticalBalance = verticalBalance * 0.9 + (ratio - 0.5);
+  }
+
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+  popup.style.visibility = 'visible';
+
+  setTimeout(()=>{
+    popup.style.opacity = "1";
+    popup.style.transform = `scale(1) rotate(${angle}deg)`;
+  },48);
+
+  const nextDelay = Math.max(MIN_DELAY, INITIAL_DELAY - count * 35);
+  setTimeout(keepBombing, nextDelay);
+}
+
+window.onload = keepBombing;
+
+// 自动播放兼容提示
+document.addEventListener('click', () => {
+    const audio = document.getElementById('bgMusic');
+    audio.muted = false;
+    audio.play();
+}, { once: true });
+
+</script>
+</body>
+</html>
